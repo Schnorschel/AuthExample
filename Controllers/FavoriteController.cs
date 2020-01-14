@@ -108,13 +108,7 @@ namespace AuthExample.Controllers
       }
 
       // Find out if the favorite already exists for the given user, if it does, return error message
-      // int prevFavoriteId = this.context.Favorites.FirstOrDefaultAsync(f => f.fdcId == newUserFavoriteViewModel.fdcId).Id;
-      // var prevUserFavorites = this.context.UserFavorites.Include(uf => uf.UserId == userId && uf.FavoriteId == prevFavoriteId).FirstOrDefaultAsync();
-
-      // var prevUserFavorites = await this.context.UserFavorites.Include(i => i.Favorite).Where(uf => uf.UserId == userId && uf.Favorite.fdcId == newUserFavoriteViewModel.fdcId).ToListAsync(); //Include(uf => uf.FavoriteId == prevFavoriteId).FirstOrDefaultAsync();
       int prevUserFavoritesCount = await this.context.UserFavorites.Include(i => i.Favorite).Where(uf => uf.UserId == userId && uf.Favorite.fdcId == newUserFavoriteViewModel.fdcId).CountAsync();
-      // return Ok(prevUserFavorites);
-      // if (prevUserFavorites != null)
       if (prevUserFavoritesCount != 0)
       {
         return BadRequest(new { error = $"Favorite with fdcId:{newUserFavoriteViewModel.fdcId} already exists for user {userName}" });
