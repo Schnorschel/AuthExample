@@ -37,21 +37,21 @@ namespace AuthExample.Controllers
     [HttpPost("signup")]
     public async Task<ActionResult> SignUpUser(NewUserModel userData)
     {
-      if (userData.Email.Contains("@gmail.com"))
-      {
-        return BadRequest(new { Message = "Sorry, no google accounts" });
-      }
+      // if (userData.Email.Contains("@gmail.com"))
+      // {
+      //   return BadRequest(new { Message = "Sorry, no google accounts" });
+      // }
 
       var existingUser = await this.db.Users.FirstOrDefaultAsync(f => f.Username == userData.Username);
       if (existingUser != null)
       {
-        return BadRequest(new { Message = "user already exists" });
+        return BadRequest(new { error = "User already exists." });
       }
 
       var existingUserEmail = await this.db.Users.FirstOrDefaultAsync(f => f.Email == userData.Email);
       if (existingUserEmail != null)
       {
-        return BadRequest(new { Message = "email address is already exists" });
+        return BadRequest(new { error = "Email address already exists." });
       }
 
       var user = new User
@@ -80,7 +80,7 @@ namespace AuthExample.Controllers
       var user = await this.db.Users.FirstOrDefaultAsync(f => f.Username == loginData.Username);
       if (user == null)
       {
-        return BadRequest(new { Message = "User does not exist" });
+        return BadRequest(new { Message = "User does not exist." });
       }
 
       var verificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.HashedPassword, loginData.Password);
@@ -93,7 +93,7 @@ namespace AuthExample.Controllers
       }
       else
       {
-        return BadRequest(new { message = "Wrong password" });
+        return BadRequest(new { message = "Wrong password." });
       }
     }
 

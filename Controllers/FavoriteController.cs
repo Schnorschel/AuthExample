@@ -16,11 +16,14 @@ namespace AuthExample.Controllers
   public class FavoriteController : ControllerBase
   {
     private readonly DatabaseContext context;
+
     public FavoriteController(DatabaseContext _context)
     {
       this.context = _context;
     }
 
+    // Get/return record from Favorite table matching on Id given in favoriteId
+    // This should not exist, because it allows users without authorization to meddle with other users' favorites, or requires implementation of authorization groups.
     [HttpGet("Favorite/{favoriteId}")]
     public async Task<ActionResult> GetFavorite(int favoriteId)
     {
@@ -28,6 +31,10 @@ namespace AuthExample.Controllers
       return Ok(prevFavorite);
     }
 
+    // Get/return all users lists of favorites given the user name (userName) in the token provided in the Authorization property in the header
+    // This requires an additional authorization check, because only admin users should have this access. 
+    // Hence requires user groups with auth levels.
+    // 
     // [Route("api/UserFavorite")]
     // [HttpGet]
     [HttpGet("UserFavorite")]
@@ -42,11 +49,14 @@ namespace AuthExample.Controllers
       }
       else
       {
-        var userFavorites = await this.context.UserFavorites.Include(f => f.Favorite).FirstOrDefaultAsync(uf => uf.UserId == user.Id);
+        // var userFavorites = await this.context.UserFavorites.Include(f => f.Favorite).Where(uf => uf.UserId == user.Id).ToListAsync();
+        var userFavorites = await this.context.Users.Include(f => f.UserFavorite).ThenInclude(uf => uf.Favorite).ToListAsync();
         return Ok(userFavorites);
       }
     }
 
+    // Get/return a user's favorites given their (user) id (not user name) in the User table
+    // Double checks if id matches with user name
     // [Route("api/UserFavorite")]
     // [HttpGet("{id}")]
     [HttpGet("UserFavorite/{userId}")]
@@ -71,6 +81,9 @@ namespace AuthExample.Controllers
       }
     }
 
+    // Add new favorite in UserFavorite table for user given in userId.
+    // Checks if favorite already exists in Favorite table, and only creates it if it doesn't already exist there
+    // Also double checks if user name given in token in Authorization property in request header matches given user id
     // [Route("api/UserFavorite")]
     // [HttpPost("{id}")]
     [HttpPost("UserFavorite/{userId}")]
@@ -93,35 +106,48 @@ namespace AuthExample.Controllers
       {
         return BadRequest(new { error = $"User {userName} not found" });
       }
+
+      // Find out if the favorite already exists for the given user, if it does, return error message
+      // int prevFavoriteId = this.context.Favorites.FirstOrDefaultAsync(f => f.fdcId == newUserFavoriteViewModel.fdcId).Id;
+      // var prevUserFavorites = this.context.UserFavorites.Include(uf => uf.UserId == userId && uf.FavoriteId == prevFavoriteId).FirstOrDefaultAsync();
+
+      // var prevUserFavorites = await this.context.UserFavorites.Include(i => i.Favorite).Where(uf => uf.UserId == userId && uf.Favorite.fdcId == newUserFavoriteViewModel.fdcId).ToListAsync(); //Include(uf => uf.FavoriteId == prevFavoriteId).FirstOrDefaultAsync();
+      int prevUserFavoritesCount = await this.context.UserFavorites.Include(i => i.Favorite).Where(uf => uf.UserId == userId && uf.Favorite.fdcId == newUserFavoriteViewModel.fdcId).CountAsync();
+      // return Ok(prevUserFavorites);
+      // if (prevUserFavorites != null)
+      if (prevUserFavoritesCount != 0)
+      {
+        return BadRequest(new { error = $"Favorite with fdcId:{newUserFavoriteViewModel.fdcId} already exists for user {userName}" });
+      }
+
+      // Find out if the favorite already exists in the database; if it doesn't, create it
+      var prevFavorite = await this.context.Favorites.FirstOrDefaultAsync(f => f.fdcId == newUserFavoriteViewModel.fdcId);
+      if (prevFavorite == null)
+      {
+        // it doesn't, so create a new record in the Favorite table
+        var newFavorite = new Favorite
+        {
+          fdcId = newUserFavoriteViewModel.fdcId
+        };
+        await this.context.Favorites.AddAsync(newFavorite);
+        await this.context.SaveChangesAsync();
+        FavoriteId = newFavorite.Id;
+      }
       else
       {
-        // Find out if the favorite already exists in the database
-        var prevFavorite = await this.context.Favorites.FirstOrDefaultAsync(f => f.fdcId == newUserFavoriteViewModel.fdcId);
-        if (prevFavorite == null)
-        {
-          // it doesn't, so create a new record in the Favorite table
-          var newFavorite = new Favorite
-          {
-            fdcId = newUserFavoriteViewModel.fdcId
-          };
-          await this.context.Favorites.AddAsync(newFavorite);
-          await this.context.SaveChangesAsync();
-          FavoriteId = newFavorite.Id;
-        }
-        else
-        {
-          // it does, so retrieve the Id to use for new record in UserFavorite table
-          FavoriteId = prevFavorite.Id;
-        }
-        var newUserFavorite = new UserFavorite();
-        newUserFavorite.UserId = user.Id;
-        newUserFavorite.FavoriteId = FavoriteId;
-        await this.context.UserFavorites.AddAsync(newUserFavorite);
-        await this.context.SaveChangesAsync();
-        return Ok(newUserFavorite); //.Include(f => f.Favorites));
+        // it does, so retrieve the Id to use for new record in UserFavorite table
+        FavoriteId = prevFavorite.Id;
       }
+      var newUserFavorite = new UserFavorite();
+      newUserFavorite.UserId = user.Id;
+      newUserFavorite.FavoriteId = FavoriteId;
+      await this.context.UserFavorites.AddAsync(newUserFavorite);
+      await this.context.SaveChangesAsync();
+      return Ok(newUserFavorite); //.Include(f => f.Favorites));
     }
 
+    // Deletes a favorite from UserFavorite table if given favoriteId matches UserFavorite.FavoriteId
+    // Also deletes the favorite record from Favorite table if by matching Favorite.Id == favoriteId if no other user has it favorited
     [HttpDelete("UserFavorite/{favoriteId}")]
     public async Task<ActionResult> DeleteUserFavorite(int favoriteId)
     {
