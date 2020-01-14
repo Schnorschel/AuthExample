@@ -9,6 +9,8 @@ namespace AuthExample.Models
   {
 
     public DbSet<User> Users { get; set; }
+    public DbSet<UserFavorite> UserFavorites { get; set; }
+    public DbSet<Favorite> Favorites { get; set; }
 
     private string ConvertPostConnectionToConnectionString(string connection)
     {
