@@ -25,15 +25,15 @@ namespace AuthExample.Controllers
       this.context = _context;
     }
 
-    [HttpGet]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<ActionResult> GetUserData()
-    {
-      var userName = User.Identity.Name;
+    // [HttpGet]
+    // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    // public async Task<ActionResult> GetUserData()
+    // {
+    //   var userName = User.Identity.Name;
 
-      var user = await this.context.Users.FirstOrDefaultAsync(f => f.Username == userName);
+    //   var user = await this.context.Users.FirstOrDefaultAsync(f => f.Username == userName);
 
-      return Ok(user);
-    }
+    //   return Ok(user);
+    // }
   }
 }

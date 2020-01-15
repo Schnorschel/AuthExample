@@ -24,7 +24,7 @@ namespace AuthExample.Controllers
 
     // Get/return single record from Favorite table matching on Id given in favoriteId
     // This should not exist, because it allows users without authorization to meddle with other users' favorites, or requires implementation of authorization groups.
-    [HttpGet("Favorite/{favoriteId}")]
+    [HttpGet("favorite/{favoriteId}")]
     public async Task<ActionResult> GetFavorite(int favoriteId)
     {
       var prevFavorite = await this.context.Favorites.FirstOrDefaultAsync(f => f.Id == favoriteId);
@@ -37,7 +37,7 @@ namespace AuthExample.Controllers
     // 
     // [Route("api/UserFavorite")]
     // [HttpGet]
-    [HttpGet("allusers/favorites")]
+    [HttpGet("users/favorites")]
     public async Task<ActionResult> GetAllUsersFavorites()
     {
       var userName = User.Identity.Name;
@@ -59,7 +59,7 @@ namespace AuthExample.Controllers
     // Double checks if id matches with user name
     // [Route("api/UserFavorite")]
     // [HttpGet("{id}")]
-    [HttpGet("user/favorite")]
+    [HttpGet("user/favorites")]
     public async Task<ActionResult> GetUserFavorites()
     {
       var userName = User.Identity.Name;
