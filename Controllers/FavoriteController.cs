@@ -22,7 +22,7 @@ namespace AuthExample.Controllers
       this.context = _context;
     }
 
-    // Get/return record from Favorite table matching on Id given in favoriteId
+    // Get/return single record from Favorite table matching on Id given in favoriteId
     // This should not exist, because it allows users without authorization to meddle with other users' favorites, or requires implementation of authorization groups.
     [HttpGet("Favorite/{favoriteId}")]
     public async Task<ActionResult> GetFavorite(int favoriteId)
@@ -31,13 +31,13 @@ namespace AuthExample.Controllers
       return Ok(prevFavorite);
     }
 
-    // Get/return all users lists of favorites given the user name (userName) in the token provided in the Authorization property in the header
-    // This requires an additional authorization check, because only admin users should have this access. 
+    // Get/return all users' favorites 
+    // To Do: requires an additional authorization check, because only admin users should have this access. 
     // Hence requires user groups with auth levels.
     // 
     // [Route("api/UserFavorite")]
     // [HttpGet]
-    [HttpGet("UserFavorite")]
+    [HttpGet("allusers/favorites")]
     public async Task<ActionResult> GetAllUsersFavorites()
     {
       var userName = User.Identity.Name;
@@ -55,24 +55,18 @@ namespace AuthExample.Controllers
       }
     }
 
-    // Get/return a user's favorites given their (user) id (not user name) in the User table
+    // Get/return a single user's favorites given their (user) id (not user name) in the User table
     // Double checks if id matches with user name
     // [Route("api/UserFavorite")]
     // [HttpGet("{id}")]
-    [HttpGet("UserFavorite/{userId}")]
-    public async Task<ActionResult> GetUserFavorites(int userId)
+    [HttpGet("user/favorite")]
+    public async Task<ActionResult> GetUserFavorites()
     {
       var userName = User.Identity.Name;
       var user = await this.context.Users.Include(i => i.UserFavorite).ThenInclude(uf => uf.Favorite).FirstOrDefaultAsync(f => f.Username == userName);
-
       if (user == null)
       {
         return BadRequest(new { error = $"User {user} not found" });
-      }
-      else
-      if (user.Id != userId)
-      {
-        return BadRequest(new { error = $"Authenticated user name ({userName}) differs from endpoint id ({userId})." });
       }
       else
       {
@@ -86,8 +80,8 @@ namespace AuthExample.Controllers
     // Also double checks if user name given in token in Authorization property in request header matches given user id
     // [Route("api/UserFavorite")]
     // [HttpPost("{id}")]
-    [HttpPost("UserFavorite/{userId}")]
-    public async Task<ActionResult> CreateUserFavorite(int userId, NewUserFavoriteViewModel newUserFavoriteViewModel)
+    [HttpPost("user/favorite")]
+    public async Task<ActionResult> CreateUserFavorite(NewUserFavoriteViewModel newUserFavoriteViewModel)
     {
       int FavoriteId = 0;
       var userName = User.Identity.Name;
@@ -97,6 +91,7 @@ namespace AuthExample.Controllers
       {
         return BadRequest(new { error = $"Authenticated user name ({userName} differs from payload user name {newUserFavoriteViewModel.Username})" });
       }
+      int userId = user.Id;
       if (user.Id != userId)
       {
         return BadRequest(new { error = $"Authenticated user id ({user.Id}) differs from endpoint id ({userId})" });
@@ -142,7 +137,7 @@ namespace AuthExample.Controllers
 
     // Deletes a favorite from UserFavorite table if given favoriteId matches UserFavorite.FavoriteId
     // Also deletes the favorite record from Favorite table if by matching Favorite.Id == favoriteId if no other user has it favorited
-    [HttpDelete("UserFavorite/{favoriteId}")]
+    [HttpDelete("user/favorite/{favoriteId}")]
     public async Task<ActionResult> DeleteUserFavorite(int favoriteId)
     {
       // get the user name from the header Authorization data item
