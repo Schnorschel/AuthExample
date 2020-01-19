@@ -11,10 +11,18 @@ namespace AuthExample.Controllers
   public class FoodController : ControllerBase
   {
     [HttpGet]
-    public async Task<ActionResult> Search(string searchTerm, string pageNumber = "1")
+    public async Task<ActionResult> Search(string searchTerm, string pageNumber = "1", string includeDataTypeList = null, string requireAllWords = null)
     {
       searchTerm = Uri.EscapeUriString(searchTerm);
       var url = $"https://api.nal.usda.gov/fdc/v1/search?api_key=gDM0ZXrJf7KbErIMxVX0a23yfl64EaWNmiV176kd&generalSearchInput={searchTerm}&pageNumber={pageNumber}"; // sample url
+      if (includeDataTypeList != null)
+      {
+        url += "&includeDataTypeList=" + Uri.EscapeUriString(includeDataTypeList);
+      }
+      if (requireAllWords != null)
+      {
+        url += "&requireAllWords=true";
+      }
       // if (sortOrder != null)
       // {
       //   //add the page number to the url

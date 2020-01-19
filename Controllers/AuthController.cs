@@ -80,7 +80,7 @@ namespace AuthExample.Controllers
       var user = await this.db.Users.FirstOrDefaultAsync(f => f.Username == loginData.Username);
       if (user == null)
       {
-        return BadRequest(new { Message = "User does not exist." });
+        return BadRequest(new { error = "User does not exist." });
       }
 
       var verificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.HashedPassword, loginData.Password);
@@ -93,7 +93,7 @@ namespace AuthExample.Controllers
       }
       else
       {
-        return BadRequest(new { message = "Wrong password." });
+        return BadRequest(new { error = "Wrong password." });
       }
     }
 
