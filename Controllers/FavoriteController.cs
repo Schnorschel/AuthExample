@@ -116,7 +116,12 @@ namespace AuthExample.Controllers
         // it doesn't, so create a new record in the Favorite table
         var newFavorite = new Favorite
         {
-          fdcId = newUserFavoriteViewModel.fdcId
+          fdcId = newUserFavoriteViewModel.fdcId,
+          description = newUserFavoriteViewModel.description,
+          gtinUpc = newUserFavoriteViewModel.gtinUpc,
+          brandOwner = newUserFavoriteViewModel.brandOwner,
+          ingredients = newUserFavoriteViewModel.ingredients,
+          additionalDescriptions = newUserFavoriteViewModel.additionalDescriptions
         };
         await this.context.Favorites.AddAsync(newFavorite);
         await this.context.SaveChangesAsync();
